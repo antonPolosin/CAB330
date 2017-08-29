@@ -1,18 +1,21 @@
+# Task.1.
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt # display plots
+import seaborn as sns # generates plots
 # Task.2.
 from sklearn.model_selection import train_test_split
-
-# notes
-#anything to do with neighborhood group
-#df.groupby(['NGROUP'])['NEIGHBORHOOD'].value_counts()
-#df.groupby(['NGROUP'])['NEIGHBORHOOD'].describe()
-# end of notes
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, accuracy_score
+import pydot
+from io import StringIO
+from sklearn.tree import export_graphviz
 
 # start of script
-def data_prep()
+def data_prep():
 	df = pd.read_csv('organics.csv') #read dataset from organic_datamining.csv
 	
+	print("################## Initial Data #########################")
 	df.info() # displays list of information about the dataset
 	
 	### Task.1.a. What is the proportion of individuals who purchased organic products?
@@ -33,7 +36,13 @@ def data_prep()
 	df['AGE'] = df['AGE'].astype(int)
 	
 	# impute for NGROUP with mode most occuring group
-	df['NGROUP'].fillna(df['NGROUP'].mode(), inplace=True)
+	df['NGROUP'].fillna(df['NGROUP'].mode()[0], inplace=True)
+	
+	# delete errornous BILL with values < 1
+	mask = df['BILL'] < 1
+	df.loc[mask, 'BILL'] = np.nan
+	# dropping rows in df based on the errornous values in BILL
+	df = df[np.isfinite(df['BILL'])]
 	
 	# impute REGION with unknown
 	df['REGION'].fillna('Unknown', inplace=True)
@@ -47,7 +56,7 @@ def data_prep()
 	df['AFFL'] = df['AFFL'].astype(int)
 	
 	# impute LTIME with mode
-	df['LTIME'].fillna(['LTIME'].mode(), inplace=True)
+	df['LTIME'].fillna(df['LTIME'].mode()[0], inplace=True)
 	# LTIME from float to int
 	df['LTIME'] = df['LTIME'].astype(int)
 	
@@ -61,23 +70,26 @@ def data_prep()
 	# you set? Explain your selection. (Hint: Take the lead from Week 2 lecture on
 	# data distribution)
 	
+	# batch testing method for distribution scheme with 70% training 30% test data
 	
-	
-############################################################################################################
-#Part 2
+	print("################## Processed Data #########################")
+	df.info()
+	print("################## Pre-Process Complete#####################")
+	return df
+
+#######################Task.2.#################################################################################
 
 #preporcessing steop from previous step, type the following
 #df = data_prep()
 
-
-
-#split into test and training data
-y = df['TargetB']
-x = df.drop(['TargetB'], axis=1)
-
-
-
-
-
-
-
+def decision_tree():
+	#split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	
+	# model build
+	
