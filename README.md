@@ -5,4 +5,4 @@ Assessment1
 
 from organic_script import data_prep
 
-df = data_prep
+df = data_prep()
