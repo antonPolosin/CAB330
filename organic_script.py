@@ -10,6 +10,9 @@ from sklearn.metrics import classification_report, accuracy_score
 import pydot
 from io import StringIO
 from sklearn.tree import export_graphviz
+# Task.3.
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
 # start of script
 def data_prep():
@@ -33,7 +36,7 @@ def data_prep():
 	# impute for AGE with rounding, change to int later
 	df['AGE'].fillna(round(df['AGE'].mean()), inplace=True)
 	# AGE from float to int
-	#df['AGE'] = df['AGE'].astype(int)
+	df['AGE'] = df['AGE'].astype(int)
 	
 	# impute for NGROUP with mode most occuring group
 	df['NGROUP'].fillna(df['NGROUP'].mode()[0], inplace=True)
@@ -41,6 +44,9 @@ def data_prep():
 	# delete errornous BILL with values < 1
 	mask = df['BILL'] < 1
 	df.loc[mask, 'BILL'] = np.nan
+	# delete outliers BILL with values > 15000
+	mask1 = df['BILL'] > 150000
+	df.loc[mask1, 'BILL'] = np.nan
 	# dropping rows in df based on the errornous values in BILL
 	df = df[np.isfinite(df['BILL'])]
 	
@@ -96,6 +102,7 @@ def decision_tree():
 	model.fit(X_train, y_train)
 	
 	# print Train and Test data accuracy
+	print("##################### Decision Tree Model ################################")
 	print("Train accuracy:", model.score(X_train, y_train))
 	print("Train accuracy:", model.score(X_test, y_test))
 	
@@ -115,9 +122,43 @@ def decision_tree():
 	
 	for i in indices:
 		print(feature_names[i], ':', importances[i])
-	
+		
+	# render decision tree diagram
 	dotfile = StringIO()
 	export_graphviz(model, out_file=dotfile, feature_names=X.columns)
 	graph = pydot.graph_from_dot_data(dotfile.getvalue())
 	graph.write_png("week3_dt_viz.png") # saved in the following file
+
+def regression():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	# build regression model
+	model = LogisticRegression()
+	model.fit(X_train, y_train)
+	
+	# print train and test accuracy
+	print("##################### Regression Model ################################")
+	print("Train accuracy:", model.score(X_train, y_train))
+	print("Test accuracy:", model.score(X_test, y_test))
+	
+	y_pred = model.predict(X_test)
+	print(classification_report(y_test, y_pred))
+	
+	# logistic regression model, all of these weights are stored in .coef_ array of the model
+	print(model.coef_)
+	
+	
 	
