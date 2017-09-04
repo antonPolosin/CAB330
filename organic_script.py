@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report, accuracy_score
 import pydot
 from io import StringIO
 from sklearn.tree import export_graphviz
+from sklearn.model_selection import GridSearchCV
 # Task.3.
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -129,6 +130,37 @@ def decision_tree():
 	graph = pydot.graph_from_dot_data(dotfile.getvalue())
 	graph.write_png("week3_dt_viz.png") # saved in the following file
 
+def hp_decision_tree():
+	df = data_prep()
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	
+	# grid search CV
+	params = {'criterion': ['gini'],
+          'max_depth': range(2, 5),
+          'min_samples_leaf': range(40, 61, 5)}
+	
+	cv = GridSearchCV(param_grid=params, estimator=DecisionTreeClassifier(), cv=10)
+	cv.fit(X_train, y_train)
+	
+	print("Train accuracy:", cv.score(X_train, y_train))
+	print("Test accuracy:", cv.score(X_test, y_test))
+	
+	# test the best model
+	y_pred = cv.predict(X_test)
+	print(classification_report(y_test, y_pred))
+	
+	# print parameters of the best model
+	print(cv.best_params_)
+	
+	analyse_feature_importance(cv.best_estimator_, X.columns, 20)
+	visualize_decision_tree(cv.best_estimator_, X.columns, "dm_best_cv.png")
+	
 def regression():
 	df = data_prep()
 	
@@ -160,5 +192,55 @@ def regression():
 	# logistic regression model, all of these weights are stored in .coef_ array of the model
 	print(model.coef_)
 	
+def hp_regression():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	params = {'C': [pow(10, x) for x in range(-6, 4)]}
+	
+	cv = GridSearchCV(param_grid=params, estimator=LogisticRegression(), cv=10, n_jobs=-1)
+	cv.fit(X_train, y_train)
+	
+	# test the best model
+	print("Train accuracy:", cv.score(X_train, y_train))
+	print("Test accuracy:", cv.score(X_test, y_test))
+	
+	y_pred = cv.predict(X_test)
+	print(classification_report(y_test, y_pred))
+	
+	# print parameters of the best model
+	print(cv.best_params_)
+	
+def analyse_feature_importance(dm_model, feature_names, n_to_display=20):
+    # grab feature importances from the model
+    importances = dm_model.feature_importances_
+    
+    # sort them out in descending order
+    indices = np.argsort(importances)
+    indices = np.flip(indices, axis=0)
+
+    # limit to 20 features, you can leave this out to print out everything
+    indices = indices[:n_to_display]
+
+    for i in indices:
+        print(feature_names[i], ':', importances[i])
+
+def visualize_decision_tree(dm_model, feature_names, save_name):
+    dotfile = StringIO()
+    export_graphviz(dm_model, out_file=dotfile, feature_names=feature_names)
+    graph = pydot.graph_from_dot_data(dotfile.getvalue())
+    graph.write_png(save_name) # saved in the following file
 	
 	
