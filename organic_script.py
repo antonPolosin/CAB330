@@ -64,7 +64,7 @@ def data_prep():
 	mask = df['AFFL'] > 30
 	df.loc[mask, 'AFFL'] = np.nan
 	mask1 = df['AFFL'] < 1
-	df.loc[mask, 'AFFL'] = np.nan
+	df.loc[mask1, 'AFFL'] = np.nan
 	# impute for AFFL with rounding, change to int later
 	df['AFFL'].fillna(round(df['AFFL'].mean()), inplace=True)
 	# AFFL from float to str because it's categorical
