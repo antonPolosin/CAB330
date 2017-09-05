@@ -94,8 +94,8 @@ def data_prep():
 	return df
 	
 	
-	#######################Task.2.#################################################################################
-	
+#######################Task.2.#################################################################################
+# default decision tree
 def decision_tree():
 	df = data_prep()
 	# split into y as target variable and X as input variable
@@ -113,7 +113,7 @@ def decision_tree():
 	# print Train and Test data accuracy
 	print("##################### Decision Tree Model ################################")
 	print("Train accuracy:", model.score(X_train, y_train))
-	print("Train accuracy:", model.score(X_test, y_test))
+	print("Test accuracy:", model.score(X_test, y_test))
 	
 	y_pred = model.predict(X_test)
 	print(classification_report(y_test, y_pred))
@@ -138,6 +138,7 @@ def decision_tree():
 	graph = pydot.graph_from_dot_data(dotfile.getvalue())
 	graph.write_png("week3_dt_viz.png") # saved in the following file
 
+# hyperparameters decision tree
 def hp_decision_tree():
 	df = data_prep()
 	# split into y as target variable and X as input variable
@@ -168,7 +169,8 @@ def hp_decision_tree():
 	
 	analyse_feature_importance(cv.best_estimator_, X.columns, 20)
 	visualize_decision_tree(cv.best_estimator_, X.columns, "dm_best_cv.png")
-	
+
+# default logistic regression
 def regression():
 	df = data_prep()
 	
@@ -199,6 +201,15 @@ def regression():
 	
 	# logistic regression model, all of these weights are stored in .coef_ array of the model
 	print(model.coef_)
+	
+	feature_names = X.columns
+	coef = model.coef_[0]
+	
+	# limit to 20 features, you can leave this out to print out everything
+	coef = coef[:20]
+	
+	for i in range(len(coef)):
+		print(feature_names[i], ':', coef[i])
 
 # hyperparameters with GridSearchCV	
 def hp_regression():
@@ -234,7 +245,7 @@ def hp_regression():
 
 ######################### Dimensionality reduction #####################################
 # Recursive feature elimination	
-def dr_regression():
+def rf_regression():
 	df = data_prep()
 	
 	# split into y as target variable and X as input variable
@@ -249,8 +260,6 @@ def dr_regression():
 	scaler = StandardScaler()
 	X_train = scaler.fit_transform(X_train, y_train)
 	X_test = scaler.transform(X_test)
-	
-	params = {'C': [pow(10, x) for x in range(-6, 4)]}
 	
 	rfe = RFECV(estimator = LogisticRegression(), cv=10)
 	rfe.fit(X_train, y_train)
@@ -324,6 +333,7 @@ def pc_regression():
 	# print parameters of the best model
 	print(cv.best_params_)
 	
+# feature selection model
 def fs_regression():
 	df = data_prep()
 	
@@ -338,9 +348,7 @@ def fs_regression():
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
 	X_train = scaler.fit_transform(X_train, y_train)
-	X_test = scaler.transform(X_test)
-	
-	from sklearn.tree import DecisionTreeClassifier
+	X_test = scaler.transform(X_test)r
 
 	params = {'criterion': ['gini', 'entropy'],
 			  'max_depth': range(3, 10),
