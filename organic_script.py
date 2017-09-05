@@ -348,7 +348,7 @@ def fs_regression():
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
 	X_train = scaler.fit_transform(X_train, y_train)
-	X_test = scaler.transform(X_test)r
+	X_test = scaler.transform(X_test)
 
 	params = {'criterion': ['gini', 'entropy'],
 			  'max_depth': range(3, 10),
