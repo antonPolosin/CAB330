@@ -313,7 +313,7 @@ def pc_regression():
 			print("N components with > 95% variance =", idx+1)
 			break
 	
-	pca = PCA(n_components=66)
+	pca = PCA(n_components=53)
 	X_train_pca = pca.fit_transform(X_train)
 	X_test_pca = pca.transform(X_test)
 	
