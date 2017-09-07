@@ -105,7 +105,7 @@ def decision_tree():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# model build
 	model = DecisionTreeClassifier(max_depth=3)
@@ -148,7 +148,7 @@ def hp_decision_tree():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# grid search CV
 	params = {'criterion': ['gini'],
@@ -181,7 +181,7 @@ def regression():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -222,7 +222,7 @@ def hp_regression():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -243,6 +243,7 @@ def hp_regression():
 	
 	# print parameters of the best model
 	print(cv.best_params_)
+	
 
 ######################### Dimensionality reduction #####################################
 # Recursive feature elimination	
@@ -255,7 +256,7 @@ def rf_regression():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.33, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -297,7 +298,7 @@ def pc_regression():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -344,7 +345,7 @@ def fs_regression():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -391,7 +392,7 @@ def neural_network():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -418,7 +419,7 @@ def cv_neural_network():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -470,7 +471,7 @@ def cv_neural_network():
 
 	print(cv.best_params_)
 
-def rfr_neural_network():
+def rfe_neural_network():
 	df = data_prep()
 	
 	# split into y as target variable and X as input variable
@@ -479,7 +480,7 @@ def rfr_neural_network():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -519,7 +520,7 @@ def rfdt_neural_network():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
@@ -551,6 +552,31 @@ def rfdt_neural_network():
 	print(rfe.n_features_)
 
 ########################### Comparing models ##########################################
+def compare_regression_cv():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	# build regression model
+	model = LogisticRegression()
+	model.fit(X_train, y_train)
+	
+	lomodel = cv.best_estimator_
+	print(log_reg_model)
+	
+	
+
 def compare():
 	df = data_prep()
 	
@@ -560,7 +586,7 @@ def compare():
 	
 	# split data into 70% training data and 30% test data
 	X_mat = X.as_matrix()
-	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.7, random_state=42, stratify=y)
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
 	
 	# scaling input values because of outlier data
 	scaler = StandardScaler()
