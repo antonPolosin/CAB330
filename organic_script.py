@@ -27,13 +27,13 @@ def data_prep():
 	df = pd.read_csv('organics.csv') #read dataset from organic_datamining.csv
 	
 	print("################## Initial Data #########################")
-	df.info() # displays list of information about the dataset
+#	df.info() # displays list of information about the dataset
 	
 	### Task.1.a. What is the proportion of individuals who purchased organic products?
 	# percent of people who has purchased organic products from the supermarket at least once
 	# in point decimal proportional ratio
 	proportion = df.groupby('ORGYN').size()/len(df)
-	print(proportion)
+#	print(proportion)
 	### Task.1.b. Did you have to fix any data quality problems? Detail them.
 	### Apply imputation method(s) to the variable(s) that need it. List the variables
 	### that needed it. Justify your choice of imputation if needed.
@@ -90,7 +90,7 @@ def data_prep():
 	
 	df = pd.get_dummies(df)
 	print("################## Processed Data #########################")
-	df.info()
+#	df.info()
 	print("################## Pre-Process Complete#####################")
 	return df
 	
@@ -139,8 +139,8 @@ def decision_tree():
 	graph = pydot.graph_from_dot_data(dotfile.getvalue())
 	graph.write_png("week3_dt_viz.png") # saved in the following file
 
-# hyperparameters decision tree
-def hp_decision_tree():
+# GridSearchCV decision tree
+def cv_decision_tree():
 	df = data_prep()
 	# split into y as target variable and X as input variable
 	y = df['ORGYN']
@@ -213,7 +213,7 @@ def regression():
 		print(feature_names[i], ':', coef[i])
 
 # hyperparameters with GridSearchCV	
-def hp_regression():
+def cv_regression():
 	df = data_prep()
 	
 	# split into y as target variable and X as input variable
@@ -351,10 +351,11 @@ def fs_regression():
 	scaler = StandardScaler()
 	X_train = scaler.fit_transform(X_train, y_train)
 	X_test = scaler.transform(X_test)
-
-	params = {'criterion': ['gini', 'entropy'],
-			  'max_depth': range(3, 10),
-			  'min_samples_leaf': range(20, 200, 20)}
+	
+	# parameters from GridCV Decision Tree
+	params = {'criterion': ['gini'],
+          'max_depth': range(2, 5),
+          'min_samples_leaf': range(40, 61, 5)}
 
 	cv = GridSearchCV(param_grid=params, estimator=DecisionTreeClassifier(), cv=10)
 	cv.fit(X_train, y_train)
@@ -399,7 +400,7 @@ def neural_network():
 	X_train = scaler.fit_transform(X_train, y_train)
 	X_test = scaler.transform(X_test)
 	
-	model = MLPClassifier()
+	model = MLPClassifier(max_iter=500)
 	model.fit(X_train, y_train)
 	
 	print("Train accuracy:", model.score(X_train, y_train))
@@ -551,6 +552,92 @@ def rfdt_neural_network():
 
 	print(rfe.n_features_)
 
+def pc_neural_network():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	pca = PCA()
+	pca.fit(X_train)
+
+	sum_var = 0
+	for idx, val in enumerate(pca.explained_variance_ratio_):
+		sum_var += val
+		if (sum_var >= 0.95):
+			print("N components with > 95% variance =", idx+1)
+			break
+	
+	pca = PCA(n_components=52)
+	X_train_pca = pca.fit_transform(X_train)
+	X_test_pca = pca.transform(X_test)
+
+	params = {'hidden_layer_sizes': [(3,), (5,), (7,), (9,)], 'alpha': [0.01,0.001, 0.0001, 0.00001]}
+
+	cv = GridSearchCV(param_grid=params, estimator=MLPClassifier(max_iter=1000), cv=10, n_jobs=-1)
+	cv.fit(X_train_pca, y_train)
+
+	print("Train accuracy:", cv.score(X_train_pca, y_train))
+	print("Test accuracy:", cv.score(X_test_pca, y_test))
+
+	y_pred = cv.predict(X_test_pca)
+	print(classification_report(y_test, y_pred))
+
+	print(cv.best_params_)
+	
+def fs_neural_network():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	params = {'criterion': ['gini'],
+          'max_depth': range(2, 5),
+          'min_samples_leaf': range(40, 61, 5)}
+	
+	cv = GridSearchCV(param_grid=params, estimator=DecisionTreeClassifier(), cv=10)
+	cv.fit(X_train, y_train)
+	
+	analyse_feature_importance(cv.best_estimator_, X.columns)
+	
+	selectmodel = SelectFromModel(cv.best_estimator_, prefit=True)
+	X_train_sel_model = selectmodel.transform(X_train)
+	X_test_sel_model = selectmodel.transform(X_test)
+
+	print(X_train_sel_model.shape)
+	
+	params = {'hidden_layer_sizes': [(3,), (5,), (7,), (9,)], 'alpha': [0.01,0.001, 0.0001, 0.00001]}
+
+	cv = GridSearchCV(param_grid=params, estimator=MLPClassifier(max_iter=1000), cv=10, n_jobs=-1)
+	cv.fit(X_train_sel_model, y_train)
+
+	print("Train accuracy:", cv.score(X_train_sel_model, y_train))
+	print("Test accuracy:", cv.score(X_test_sel_model, y_test))
+
+	y_pred = cv.predict(X_test_sel_model)
+	print(classification_report(y_test, y_pred))
+
+	print(cv.best_params_)
 ########################### Comparing models ##########################################
 def compare_regression_cv():
 	df = data_prep()
