@@ -726,14 +726,14 @@ def compare_neural_nets():
 	gscv_model = cv.best_estimator_
 	print("GSCV_MODEL: ", gscv_model)
 
-	y_pred_rfe = rfe_model.predict(X_test)
+	y_pred_rfe = rfe_model.predict(X_train_rfe)
 	y_pred_gscv = gscv_model.predict(X_test)
 
 	##############Neural Network Accuracy##############################################
 	print("Accuracy score on test for RFE Neural Net:", accuracy_score(y_test, y_pred_rfe))
 	print("Accuracy score on test for Neural Net GridSearchCV:", accuracy_score(y_test, y_pred_gscv))
 
-def compare():
+def compare_all_cv():
 	df = data_prep()
 
 	# split into y as target variable and X as input variable
@@ -830,6 +830,129 @@ def compare():
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
 	plt.title('Receiver operating characteristic example')
+	plt.legend(loc="lower right")
+	plt.show()
+	
+	compare_best_models():
+	df = data_prep()
+	
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+	
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
+	
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+	
+	# grid search CV for decision tree
+	params_dt = {'criterion': ['gini'],
+			  'max_depth': range(2, 5),
+			  'min_samples_leaf': range(40, 61, 5)}
+
+	cv = GridSearchCV(param_grid=params_dt, estimator=DecisionTreeClassifier(), cv=10)
+	cv.fit(X_train, y_train)
+
+	dt_model = cv.best_estimator_
+	y_pred = dt_model.predict(X_test)
+	print(classification_report(y_test, y_pred))
+	print(dt_model)
+	
+	
+
+	# RFE and hyperparameters for logistic regression
+	rfe = RFECV(estimator = LogisticRegression(), cv=10)
+	rfe.fit(X_train, y_train)
+	
+	X_train_sel = rfe.transform(X_train)
+	X_test_sel = rfe.transform(X_test)
+	
+	# grid search CV
+	params = {'C': [pow(10, x) for x in range(-6, 4)]}
+	
+	cv = GridSearchCV(param_grid=params, estimator=LogisticRegression(), cv=10, n_jobs=-1)
+	cv.fit(X_train_sel, y_train)
+
+	log_reg_model = cv.best_estimator_
+	y_pred = log_reg_model.predict(X_test_sel)
+	print(classification_report(y_test, y_pred))
+	print(log_reg_model)
+
+	# RFE and CV for NN
+	rfe = RFECV(estimator = LogisticRegression(), cv=10)
+	rfe.fit(X_train, y_train)
+	
+	X_train_rfe = rfe.transform(X_train)
+	X_test_rfe = rfe.transform(X_test)
+	
+
+	# step = int((X_train_rfe.shape[1] + 5)/5);
+	params = {'hidden_layer_sizes': [(3,), (5,), (7,), (9,)], 'alpha': [0.01,0.001, 0.0001, 0.00001]}
+
+	cv = GridSearchCV(param_grid=params, estimator=MLPClassifier(max_iter=1000), cv=10, n_jobs=-1)
+	cv.fit(X_train_rfe, y_train)
+
+	nn_model = cv.best_estimator_
+	y_pred = nn_model.predict(X_test_rfe)
+	print(classification_report(y_test, y_pred))
+	print(nn_model)
+	
+	# test for accuracy
+	y_pred_dt = dt_model.predict(X_test)
+	y_pred_log_reg = log_reg_model.predict(X_test_sel)
+	y_pred_nn = nn_model.predict(X_test_rfe)
+
+	print("Accuracy score on test for DT:", accuracy_score(y_test, y_pred_dt))
+	print("Accuracy score on test for logistic regression:", accuracy_score(y_test, y_pred_log_reg))
+	print("Accuracy score on test for NN:", accuracy_score(y_test, y_pred_nn))
+	
+	########################## ploting graphs ###############################
+	# typical prediction
+	y_pred = dt_model.predict(X_test)
+
+	# probability prediction from decision tree
+	y_pred_proba_dt = dt_model.predict_proba(X_test)
+
+	print("Probability produced by decision tree for each class vs actual prediction on TargetB (0 = non-buyer, 1 = buyer). You should be able to see the default threshold of 0.5.")
+	print("(Probs on zero)\t(probs on one)\t(prediction made)")
+	# print top 10
+	for i in range(10):
+		print(y_pred_proba_dt[i][0], '\t', y_pred_proba_dt[i][1], '\t', y_pred[i])
+		
+	from sklearn.metrics import roc_auc_score
+
+	y_pred_proba_dt = dt_model.predict_proba(X_test)
+	y_pred_proba_log_reg = log_reg_model.predict_proba(X_test_sel)
+	y_pred_proba_nn = nn_model.predict_proba(X_test_rfe)
+
+	roc_index_dt = roc_auc_score(y_test, y_pred_proba_dt[:, 1])
+	roc_index_log_reg = roc_auc_score(y_test, y_pred_proba_log_reg[:, 1])
+	roc_index_nn = roc_auc_score(y_test, y_pred_proba_nn[:, 1])
+
+	print("ROC index on test for DT:", roc_index_dt)
+	print("ROC index on test for logistic regression:", roc_index_log_reg)
+	print("ROC index on test for NN:", roc_index_nn)
+	
+	fpr_dt, tpr_dt, thresholds_dt = roc_curve(y_test, y_pred_proba_dt[:,1])
+	fpr_log_reg, tpr_log_reg, thresholds_log_reg = roc_curve(y_test, y_pred_proba_log_reg[:,1])
+	fpr_nn, tpr_nn, thresholds_nn = roc_curve(y_test, y_pred_proba_nn[:,1])
+	
+	plt.plot(fpr_dt, tpr_dt, label='ROC Curve for DT {:.3f}'.format(roc_index_dt), color='red', lw=0.5)
+	plt.plot(fpr_log_reg, tpr_log_reg, label='ROC Curve for Log reg {:.3f}'.format(roc_index_log_reg), color='green', lw=0.5)
+	plt.plot(fpr_nn, tpr_nn, label='ROC Curve for NN {:.3f}'.format(roc_index_nn), color='darkorange', lw=0.5)
+
+	# plt.plot(fpr[2], tpr[2], color='darkorange',
+	#          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[2])
+	plt.plot([0, 1], [0, 1], color='navy', lw=0.5, linestyle='--')
+	plt.xlim([0.0, 1.0])
+	plt.ylim([0.0, 1.05])
+	plt.xlabel('False Positive Rate')
+	plt.ylabel('True Positive Rate')
+	plt.title('Organics Buyer Characteristics')
 	plt.legend(loc="lower right")
 	plt.show()
 ########################### Global Function ###########################################
