@@ -207,7 +207,7 @@ def regression():
 	coef = model.coef_[0]
 	
 	# limit to 20 features, you can leave this out to print out everything
-	coef = coef[:20]
+	coef = coef[:60]
 	
 	for i in range(len(coef)):
 		print(feature_names[i], ':', coef[i])
@@ -243,7 +243,7 @@ def cv_regression():
 	
 	# print parameters of the best model
 	print(cv.best_params_)
-	
+
 
 ######################### Dimensionality reduction #####################################
 # Recursive feature elimination	
@@ -277,7 +277,9 @@ def rf_regression():
 	
 	cv = GridSearchCV(param_grid=params, estimator=LogisticRegression(), cv=10, n_jobs=-1)
 	cv.fit(X_train_sel, y_train)
-	
+
+	model = LogisticRegression()
+	model.fit(X_train, y_train)
 	# test the best model
 	print("Train accuracy:", cv.score(X_train_sel, y_train))
 	print("Test accuracy:", cv.score(X_test_sel, y_test))
@@ -287,6 +289,26 @@ def rf_regression():
 	
 	# print parameters of the best model
 	print(cv.best_params_)
+	#####Feature Importance#####3
+	feature_names = X.columns
+	coef = model.coef_[0]
+
+	# limit to 20 features, you can leave this out to print out everything
+	coef = coef[:60]
+
+	for i in range(len(coef)):
+		print(feature_names[i], ':', coef[i])
+
+	#FEATURE SELECTION
+
+	params = {'criterion': ['gini', 'entropy'],
+			  'max_depth': range(3, 10),
+			  'min_samples_leaf': range(20, 200, 20)}
+
+	cv = GridSearchCV(param_grid=params, estimator=DecisionTreeClassifier(), cv=10)
+	cv.fit(X_train, y_train)
+
+	analyse_feature_importance(cv.best_estimator_, X.columns)
 	
 # Principle Component	
 def pc_regression():
@@ -661,12 +683,59 @@ def compare_regression_cv():
 	
 	lomodel = cv.best_estimator_
 	print(log_reg_model)
-	
-	
+
+	##############Neural Network Comparison############
+
+def compare_neural_nets():
+	df = data_prep()
+	# split into y as target variable and X as input variable
+	y = df['ORGYN']
+	X = df.drop(['ORGYN'], axis=1)
+
+	# split data into 70% training data and 30% test data
+	X_mat = X.as_matrix()
+	X_train, X_test, y_train, y_test = train_test_split(X_mat, y, test_size=0.3, random_state=42, stratify=y)
+
+	# scaling input values because of outlier data
+	scaler = StandardScaler()
+	X_train = scaler.fit_transform(X_train, y_train)
+	X_test = scaler.transform(X_test)
+
+	rfe = RFECV(estimator=LogisticRegression(), cv=10)
+	rfe.fit(X_train, y_train)
+
+	X_train_rfe = rfe.transform(X_train)
+
+
+	# step = int((X_train_rfe.shape[1] + 5)/5);
+	params_rfe = {'hidden_layer_sizes': [(3,), (5,), (7,), (9,)], 'alpha': [0.01, 0.001, 0.0001, 0.00001]}
+
+	cv = GridSearchCV(param_grid=params_rfe, estimator=MLPClassifier(max_iter=1000), cv=10, n_jobs=-1)
+	cv.fit(X_train_rfe, y_train)
+
+	rfe_model = cv.best_estimator_
+	print("RFE_MODEL: ", rfe_model)
+
+
+	#With 52 features, we will start tuning with one hidden layer of 5 to 52 neurons, increment of 25.
+	params_gscv = {'hidden_layer_sizes': [(x,) for x in range(5, 53, 15)]}
+
+	cv = GridSearchCV(param_grid=params_gscv, estimator=MLPClassifier(max_iter=1000), cv=10, n_jobs=-1)
+	cv.fit(X_train, y_train)
+
+	gscv_model = cv.best_estimator_
+	print("GSCV_MODEL: ", gscv_model)
+
+	y_pred_rfe = rfe_model.predict(X_test)
+	y_pred_gscv = gscv_model.predict(X_test)
+
+	##############Neural Network Accuracy##############################################
+	print("Accuracy score on test for RFE Neural Net:", accuracy_score(y_test, y_pred_rfe))
+	print("Accuracy score on test for Neural Net GridSearchCV:", accuracy_score(y_test, y_pred_gscv))
 
 def compare():
 	df = data_prep()
-	
+
 	# split into y as target variable and X as input variable
 	y = df['ORGYN']
 	X = df.drop(['ORGYN'], axis=1)
